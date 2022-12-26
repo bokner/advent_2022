@@ -1,41 +1,24 @@
-int: steps = 24;
+%% Blueprint
+array[robots, minerals] of int: blueprint;
+
+%% Number of minutes
+int: minutes = 24;
 
 %% Robots 
 enum robots = {ore_robot,  clay_robot,  obsidian_robot, geode_robot};
-array[0..steps,  robots] of var 0..steps: robot_nums;
-%array[1..steps, robots] of var bool: robot_built;
+array[0..minutes,  robots] of var 0..minutes: robot_nums;
+array[1..minutes, robots] of var bool: robot_built;
 
 %% Minerals
 enum minerals = {ore, clay, obsidian};
-array[0..steps, minerals] of var 0..steps*(steps + 1) div 2: mineral_nums;
-array[1..steps, minerals] of var 0..max(blueprint): minerals_spent;
+array[0..minutes, minerals] of var 0..minutes*(minutes + 1) div 2: mineral_nums;
+array[1..minutes, minerals] of var 0..max(blueprint): minerals_spent;
 
 array[minerals] of robots: mineral_collectors = [ore_robot, clay_robot, obsidian_robot];
 
-%% Blueprint
-% array[robots, minerals] of int: blueprint = 
-%   %array2d(robots,  minerals, [ 
-%     [| 4, 0, 0
-%     | 2, 0, 0
-%     | 3, 14, 0
-%     | 2, 0, 7
-%   |];
-
-
-
-array[robots, minerals] of int: blueprint
-%  = 
-%   array2d(robots,  minerals, [ 
-%     2, 0, 0,
-%     3, 0, 0,
-%     3, 8, 0,
-%     3, 0, 12
-%   ])
-;
-
 
 %% Geodes
-array[0..steps] of var 0..steps*(steps + 1) div 2: geodes;
+array[0..minutes] of var 0..minutes*(minutes + 1) div 2: geodes;
 
 %% At the start:
 constraint geodes[0] = 0;
@@ -54,22 +37,34 @@ constraint
   robot_nums[0, obsidian_robot] = 0 /\
   robot_nums[0, geode_robot] = 0; 
 
-% Minerals: collect and spend
-constraint forall(s in 1..steps, m in minerals) (
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Minerals: collect and spend
+constraint forall(s in 1..minutes, m in minerals) (
     mineral_nums[s, m] = mineral_nums[s-1, m] + robot_nums[s-1,  mineral_collectors[m]] - minerals_spent[s, m]
 );
 
-% Build robots
-constraint forall(s in 1..steps, r in robots) (  
+%% Build robots
+constraint forall(s in 1..minutes, r in robots) (  
     robot_nums[s, r] - robot_nums[s-1, r] in {0,1}
 );
 
-constraint forall(s in 0..steps - 1, r in robots) (
+constraint forall(s in 0..minutes - 1, r in robots) (
     (robot_nums[s+1, r] = robot_nums[s, r] + 1)  -> can_build_robot(s, r)
 );
 
-%Open geodes
-constraint forall(s in 1..steps) (
+constraint forall(s in 1..minutes, r in robots) (
+    robot_built[s, r]  <- (robot_nums[s, r] = robot_nums[s-1, r] + 1) 
+);
+
+%% Can't build more than 1 robot at ta time.
+constraint forall(s in 1..minutes) (
+  sum(r in robots)(bool2int(robot_built[s, r])) <= 1
+);
+
+
+%% Open geodes
+constraint forall(s in 1..minutes) (
   geodes[s] = geodes[s-1] + robot_nums[s-1,  geode_robot]
 );
 
@@ -87,7 +82,5 @@ predicate can_build_robot(int: step, robots: robot) =
       )
   ); 
 
-solve maximize(geodes[steps]);
-
-%output[show(geodes[steps])];
+solve maximize(geodes[minutes]);
  

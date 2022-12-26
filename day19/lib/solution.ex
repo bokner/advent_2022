@@ -1,4 +1,7 @@
 defmodule Day19.Solution do
+
+  require Logger
+
   def read(input) do
     File.stream!(input)
     |> Enum.into([])
@@ -20,7 +23,22 @@ defmodule Day19.Solution do
   end
 
   defp solve_mzn(blueprint) do
-    :ok
+    {:ok, solution}  =
+      MinizincSolver.solve_sync("model/day19.mzn", build_dzn(blueprint), solver: "chuffed")
+    MinizincResults.get_last_solution(solution) |> MinizincResults.get_solution_objective()
+      |> tap(fn result -> Logger.debug("Solution for #{blueprint.blueprint_id}: #{result}") end)
+  end
+
+  defp build_dzn(blueprint) do
+    minerals = ["ore", "clay", "obsidian"]
+    robots = ["ore", "clay", "obsidian", "geode"]
+    %{blueprint: {["robots", "minerals"],
+    for r <- robots do
+      for m <- minerals do
+        Map.get(blueprint, r) |> Map.get(m, 0)
+      end
+    end}
+  }
   end
 
   defp parse_blueprint(blueprint) do
@@ -44,7 +62,7 @@ defmodule Day19.Solution do
   defp parse_description([robot, "robot", cost, mineral | rest], acc) do
     parse_description(
       rest,
-      Map.put(acc, robot, %{mineral => cost})
+      Map.put(acc, robot, %{mineral => String.to_integer(cost)})
       |> Map.put(:current_robot, robot)
     )
   end
@@ -54,7 +72,7 @@ defmodule Day19.Solution do
 
     {_, new_acc} =
       Map.get_and_update(acc, current_robot, fn current ->
-        {current, Map.put(current, mineral, cost)}
+        {current, Map.put(current, mineral, String.to_integer(cost))}
       end)
 
     parse_description(rest, new_acc)
