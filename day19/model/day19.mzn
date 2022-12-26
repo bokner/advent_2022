@@ -2,7 +2,7 @@
 array[robots, minerals] of int: blueprint;
 
 %% Number of minutes
-int: minutes = 24;
+int: minutes;
 
 %% Robots 
 enum robots = {ore_robot,  clay_robot,  obsidian_robot, geode_robot};

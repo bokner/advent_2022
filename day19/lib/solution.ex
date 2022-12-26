@@ -1,5 +1,4 @@
 defmodule Day19.Solution do
-
   require Logger
 
   def read(input) do
@@ -10,35 +9,58 @@ defmodule Day19.Solution do
     end)
   end
 
-  def solve(input) do
+  def solve_part1(input) do
     input
     |> read()
-    |> solve_all()
-    |> Enum.sum()
+    |> solve(24, 30)
+    |> Enum.reduce({0, 1}, fn sol, {sum, idx} = _acc -> {sum + sol * idx, idx + 1} end)
+    |> then(fn {answer, _} -> answer end)
   end
 
-  defp solve_all(blueprints) do
+  def solve_part2(input) do
+    input
+    |> read()
+    |> solve(32, 3)
+    |> Enum.product()
+  end
+
+  defp solve(blueprints, minutes, how_many) do
     blueprints
-    |> Enum.map(fn bp -> String.to_integer(bp.blueprint_id) * solve_mzn(bp) end)
+    |> Enum.take(how_many)
+    |> Enum.map(fn bp ->
+      solve_mzn(bp, minutes)
+    end)
   end
 
-  defp solve_mzn(blueprint) do
-    {:ok, solution}  =
-      MinizincSolver.solve_sync("model/day19.mzn", build_dzn(blueprint), solver: "chuffed")
-    MinizincResults.get_last_solution(solution) |> MinizincResults.get_solution_objective()
-      |> tap(fn result -> Logger.debug("Solution for #{blueprint.blueprint_id}: #{result}") end)
+  defp solve_mzn(blueprint, minutes) do
+    {:ok, solution} =
+      MinizincSolver.solve_sync(
+        "model/day19.mzn",
+        build_dzn(blueprint, minutes),
+        solver: "chuffed"
+      )
+
+    MinizincResults.get_last_solution(solution)
+    |> MinizincResults.get_solution_objective()
+    |> tap(fn result ->
+      Logger.info("Solution for #{blueprint.blueprint_id}: #{result}")
+    end)
   end
 
-  defp build_dzn(blueprint) do
+  defp build_dzn(blueprint, minutes) do
     minerals = ["ore", "clay", "obsidian"]
     robots = ["ore", "clay", "obsidian", "geode"]
-    %{blueprint: {["robots", "minerals"],
-    for r <- robots do
-      for m <- minerals do
-        Map.get(blueprint, r) |> Map.get(m, 0)
-      end
-    end}
-  }
+
+    %{
+      minutes: minutes,
+      blueprint:
+        {["robots", "minerals"],
+         for r <- robots do
+           for m <- minerals do
+             Map.get(blueprint, r) |> Map.get(m, 0)
+           end
+         end}
+    }
   end
 
   defp parse_blueprint(blueprint) do
