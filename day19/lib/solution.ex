@@ -24,7 +24,7 @@ defmodule Day19.Solution do
     |> Enum.product()
   end
 
-  defp solve(blueprints, minutes, how_many) do
+  def solve(blueprints, minutes, how_many) do
     blueprints
     |> Enum.take(how_many)
     |> Enum.map(fn bp ->
