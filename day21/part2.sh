@@ -12,5 +12,4 @@
             }
         }
     }' $1; \
-    echo "output[show(floor(fix(humn)))];";} > part2_model.mzn
-minizinc part2_model.mzn --solver coin-bc
+    echo "output[show(floor(fix(humn)))];";} | minizinc --solver coin-bc -
