@@ -32,7 +32,7 @@ constraint forall(v in valves)(
 %% At most one valve opened at every move
 
 constraint forall(m in MINUTES) (
-   open_valves[m-1] subset open_valves[m] /\ (card (open_valves[m]) - card(open_valves[m-1]) <=1)
+   open_valves[m-1] subset open_valves[m] %/\ (card (open_valves[m]) - card(open_valves[m-1]) <=1)
  );
 
 
