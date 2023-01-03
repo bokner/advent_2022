@@ -1,4 +1,5 @@
 defmodule Day18.Solution do
+  require Logger
 def connected(cube1, cube2) do
   [x1, y1, z1] = cube1
   [x2, y2, z2] = cube2
@@ -25,10 +26,15 @@ end
  end
  def count_connections(cubes, connections) do
    [cube | rest] = cubes
-   new_connections = Enum.reduce(rest, connections,
-    fn other_cube, acc -> connected(cube, other_cube) && acc + 1 || acc end
+   cube_connections = Enum.reduce(rest, 0,
+    fn other_cube, acc ->
+      connected(cube, other_cube)
+      |> tap(fn res -> res && Logger.debug("#{inspect(cube)} -> #{inspect(other_cube)}") end)
+      && acc + 1 || acc end
    )
-   count_connections(rest, new_connections)
+
+   ##Logger.debug("#{inspect(cube)}: #{cube_connections}")
+   count_connections(rest, connections + cube_connections)
  end
 
  def solve(input) do

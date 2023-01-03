@@ -27,19 +27,13 @@ constraint forall(v in valves)(
   if rates[v] = 0 then v in open_valves[0] else not (v in open_valves[0]) endif
 );
 
-%constraint open_valves[0] = {};
-
-%% At most one valve opened at every move
-
+% Not changing position for the first time
+% implies opening the valve at that position
 constraint forall(m in MINUTES) (
-   open_valves[m-1] subset open_valves[m] %/\ (card (open_valves[m]) - card(open_valves[m-1]) <=1)
- );
-
-
-constraint forall(m in MINUTES) (
- if (position[m] = position[m-1]) then
+ if (position[m] = position[m-1]) %/\ (not (position[m] in open_valves[m-1])) 
+ then
   (open_valves[m] = open_valves[m-1] union {position[m]})
-    %position[m] in open_valves[m]
+
  else
    (open_valves[m] = open_valves[m-1])
  endif    

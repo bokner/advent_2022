@@ -40,7 +40,7 @@ defmodule Day19.Solution do
         solver: "chuffed"
       )
 
-    MinizincResults.get_last_solution(solution)
+      MinizincResults.get_last_solution(solution)
     |> MinizincResults.get_solution_objective()
     |> tap(fn result ->
       Logger.info("Solution for #{blueprint.blueprint_id}: #{result}")
