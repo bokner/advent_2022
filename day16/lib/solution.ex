@@ -7,7 +7,7 @@ defmodule Day16.Solution do
     |> Enum.map(fn line ->
       parse_valve(line)
     end)
-    |> make_dzn()
+    |> valve_data()
   end
 
   defp parse_valve(line) do
@@ -24,11 +24,37 @@ defmodule Day16.Solution do
     end)
   end
 
-  defp make_dzn(data) do
+  defp valve_data(data) do
     data
     |> Enum.sort_by(& &1.valve)
     |> List.foldr({[], [], []}, fn rec, {valves, connections, rates} ->
       {[rec.valve | valves], [rec.connected_to | connections], [rec.rate | rates]}
+    end)
+  end
+
+  def solve(input, minutes \\ 30) do
+    read(input)
+    |> solve_mzn(minutes)
+  end
+
+  defp solve_mzn({valves, connections, rates} = _data, minutes) do
+    dzn = %{
+      minutes: minutes,
+      valves: List.to_tuple(valves),
+      connections: {["valves"], connections},
+      rates: {["valves"], rates}
+    }
+    {:ok, solution} =
+      MinizincSolver.solve_sync(
+        "model/valves.mzn",
+        dzn,
+        solver: "or-tools"
+      )
+
+    MinizincResults.get_last_solution(solution)
+    |> MinizincResults.get_solution_objective()
+    |> tap(fn result ->
+      Logger.info("Solution: #{result}")
     end)
   end
 
