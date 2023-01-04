@@ -15,7 +15,7 @@ array[MINUTES0] of var set of valves: open_valves;
 
 array[MINUTES0] of var valves: position;
 
-array[MINUTES0] of var 0..sum(rates)*minutes: flow;
+array[MINUTES0] of var 0..sum(rates): flow;
 
 %% At the start:
 %% Initial position is at AA
@@ -30,7 +30,7 @@ constraint forall(v in valves)(
 % Not changing position for the first time
 % implies opening the valve at that position
 constraint forall(m in MINUTES) (
- if (position[m] = position[m-1]) %/\ (not (position[m] in open_valves[m-1])) 
+ if (position[m] = position[m-1]) 
  then
   (open_valves[m] = open_valves[m-1] union {position[m]})
 
@@ -42,7 +42,7 @@ constraint forall(m in MINUTES) (
 
 constraint forall(m in MINUTES)(
   flow[m] = sum(v in open_valves[m-1])(rates[v])
-    %flow[m-1] + sum(v in (open_valves[m] diff open_valves[m-1]))(rates[v])
+
 );
 
 
@@ -57,9 +57,6 @@ constraint forall(m in MINUTES)(
   endif    
 );
 
-
-
-%constraint flow = sum(v in open_valves[minutes])(rates[v]);
 var int: total;
 
 constraint total = sum(flow);
