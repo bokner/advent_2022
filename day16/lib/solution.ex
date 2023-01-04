@@ -14,7 +14,18 @@ defmodule Day16.Solution do
     # Example: Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
     line
     |> String.trim()
-    |> String.split(["Valve ", " has flow rate=", " tunnels lead ", " tunnel leads ", "to valves ", "to valve ", ";"], trim: true)
+    |> String.split(
+      [
+        "Valve ",
+        " has flow rate=",
+        " tunnels lead ",
+        " tunnel leads ",
+        "to valves ",
+        "to valve ",
+        ";"
+      ],
+      trim: true
+    )
     |> then(fn [valve, rate, tunnels] ->
       %{
         valve: valve,
@@ -32,23 +43,31 @@ defmodule Day16.Solution do
     end)
   end
 
-  def solve(input, minutes \\ 30) do
+  def solve(input, part \\ :part1) do
     read(input)
-    |> solve_mzn(minutes)
+    |> solve_mzn(part)
   end
 
-  defp solve_mzn({valves, connections, rates} = _data, minutes) do
+  defp solve_mzn({valves, connections, rates} = _data, part) do
+    {model, minutes} =
+      case part do
+        :part1 -> {"model/valves.mzn", 30}
+        :part2 -> {"model/valves_part2.mzn", 26}
+      end
+
     dzn = %{
       minutes: minutes,
       valves: List.to_tuple(valves),
       connections: {["valves"], connections},
       rates: {["valves"], rates}
     }
+
     {:ok, solution} =
       MinizincSolver.solve_sync(
-        "model/valves.mzn",
+        model,
         dzn,
-        solver: "or-tools"
+        solver: "or-tools",
+        time_limit: 60 * 60 * 1000
       )
 
     MinizincResults.get_last_solution(solution)
@@ -57,5 +76,4 @@ defmodule Day16.Solution do
       Logger.info("Solution: #{result}")
     end)
   end
-
 end
