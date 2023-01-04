@@ -1,5 +1,5 @@
 % Valves (Advent of Code, day 16)
-include "globals.mzn";
+include "all_equal.mzn";
 
 int: minutes; 
 
@@ -32,48 +32,53 @@ constraint forall(v in valves)(
   if rates[v] = 0 then v in open_valves[0] else not (v in open_valves[0]) endif
 );
 
-% Not changing position for the first time
-% implies opening the valve at that position
-constraint forall(m in MINUTES)(
-  not all_equal([position[m-1, human], position[m, human], 
-    position[m-1, elephant], position[m, elephant]]) 
+%% The valve needs only one visitor to be open
+constraint forall(m in MINUTES) (
+  ( 
+  (position[m, human] = position[m-1,  human]) /\
+  (position[m, elephant] = position[m-1,  elephant])
+  ) -> (position[m,  human] != position[m,  elephant])
+
 );
 
-
+% Human and/or elephant open the valves
+% 
 constraint forall(m in MINUTES) (
- if ((position[m, human] = position[m-1, human])) /\ (position[m, elephant] = position[m-1, elephant])
+ let {
+    var bool: human_opens = (position[m, human] = position[m-1, human]);
+    var bool: elephant_opens = (position[m, elephant] = position[m-1, elephant]);
+    var bool: two_openings = human_opens /\ elephant_opens;
+    } in 
+ if  two_openings
  then
   (open_valves[m] = open_valves[m-1] union {position[m-1, human], position[m-1, elephant]})
-elseif (position[m, human] = position[m-1, human]) then
+elseif human_opens then
   (open_valves[m] = open_valves[m-1] union {position[m-1, human]})
   
- elseif (position[m, elephant] = position[m-1, elephant]) then
+ elseif elephant_opens then
   (open_valves[m] = open_valves[m-1] union {position[m-1, elephant]})
  else 
    (open_valves[m] = open_valves[m-1])
  endif    
 );
 
-
+%% Total flow rate at every minute
 constraint forall(m in MINUTES)(
   flow[m] = sum(v in open_valves[m-1])(rates[v])
 );
 
-
-
-
 %% Next move
 constraint forall(m in MINUTES, t in team)(
-  if position[m-1, t] in open_valves[m-1] then
+  if open_valves[m] = valves then 
+    position[m, t] = position[m-1, t]
+    
+  elseif position[m-1, t] in open_valves[m-1] then
     position[m, t] in connections[position[m-1, t]]
   else
     position[m, t] in connections[position[m-1, t]] union {position[m-1, t]}
   endif    
 );
 
-
-
-%constraint flow = sum(v in open_valves[minutes])(rates[v]);
 var int: total;
 
 constraint total = sum(flow);
