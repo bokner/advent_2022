@@ -17,6 +17,8 @@ array[MINUTES0] of var valves: position;
 
 array[MINUTES0] of var 0..sum(rates): flow;
 
+array[MINUTES] of var opt valves: openings;
+
 %% At the start:
 %% Initial position is at AA
 constraint position[0] = valves[1];
@@ -33,15 +35,18 @@ constraint forall(m in MINUTES) (
  if (position[m] = position[m-1]) 
  then
   (open_valves[m] = open_valves[m-1] union {position[m]})
+  /\ openings[m] = position[m]
 
  else
    (open_valves[m] = open_valves[m-1])
+   /\ openings[m] = <>
  endif    
 );
 
 
 constraint forall(m in MINUTES)(
-  flow[m] = sum(v in open_valves[m-1])(rates[v])
+  flow[m] = %sum(v in open_valves[m-1])(rates[v])
+    flow[m-1] + rates[position[m-1]]
 
 );
 
