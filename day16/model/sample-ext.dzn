@@ -1,0 +1,29 @@
+minutes = 30;
+
+valves = {AA, BB, CC, DD, EE, FF, GG, HH, II, JJ, BB1, CC1, DD1, EE1, HH1, JJ1};
+
+%rates = [0, 13, 2, 20, 3, 0, 0, 22, 0, 21]; 
+
+rates = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 2, 20, 3, 22, 21];
+
+connections = [
+  {DD, II, BB},
+  {CC, AA, BB1},
+  {DD, BB, CC1},
+  {CC, AA, EE, DD1},
+  {FF, DD, EE1},
+  {EE, GG},
+  {FF, HH},
+  {GG, HH1},
+  {AA, JJ},
+  {II, JJ1},
+  %% valves with rate > 0
+  {CC, AA}, % BB
+  {DD, BB}, % CC
+  {CC, AA, EE}, % DD
+  {FF, DD}, % EE
+  {GG},  % HH
+  {II} % JJ
+];
+
+
