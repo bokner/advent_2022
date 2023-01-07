@@ -1,6 +1,4 @@
 % Valves (Advent of Code, day 16)
-include "all_equal.mzn";
-
 int: minutes; 
 
 set of int: MINUTES = 1..minutes;
@@ -69,10 +67,7 @@ constraint forall(m in MINUTES)(
 
 %% Next move
 constraint forall(m in MINUTES, t in team)(
-  if open_valves[m] = valves then 
-    position[m, t] = position[m-1, t]
-    
-  elseif position[m-1, t] in open_valves[m-1] then
+  if position[m-1, t] in open_valves[m-1] then
     position[m, t] in connections[position[m-1, t]]
   else
     position[m, t] in connections[position[m-1, t]] union {position[m-1, t]}
