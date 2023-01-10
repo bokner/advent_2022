@@ -49,16 +49,15 @@ defmodule Day16.Solution do
   end
 
   defp solve_mzn({valves, connections, rates} = _data, part) do
-    {model, minutes, solver} =
+    {model, minutes, team_size, solver} =
       case part do
-        :part1 -> {"model/valves.mzn", 30, "or_tools"}
-        :part1_ext -> {"model/valves-ext.mzn", 30, "chuffed"}
-        :part2 -> {"model/valves_part2.mzn", 26, "or-tools"}
+        :part1 -> {"model/valves-ext-team.mzn", 30, 1, "chuffed"}
+        :part2 -> {"model/valves-ext-team.mzn", 26, 2, "chuffed"}
       end
 
 
-    dzn = build_dzn(valves, connections, rates)
-    |> Map.put(:minutes, minutes)
+    dzn = build_dzn(valves, connections, rates, minutes, team_size)
+
 
 
 
@@ -67,7 +66,8 @@ defmodule Day16.Solution do
         model,
         dzn,
         solver: solver,
-        time_limit: 60 * 60 * 1000
+        time_limit: 60 * 60 * 1000,
+        solution_handler: Day16.MinizincHandler
       )
 
     MinizincResults.get_last_solution(solution)
@@ -77,26 +77,62 @@ defmodule Day16.Solution do
     end)
   end
 
-  defp build_dzn(valves, connections, rates) do
+  defp build_dzn(valves, connections, rates, minutes, team_size) do
     {updated_rates, updated_valves, updated_connections} = List.foldr(Enum.zip([rates, valves, connections]), {[], [], []},
 
     fn {0, valve, conns}, {rates_acc, valves_acc, conns_acc} -> {[0 | rates_acc], [valve | valves_acc], [conns | conns_acc]}
       {rate, valve, conns}, {rates_acc, valves_acc, conns_acc} ->
         new_rates = [0, rate | rates_acc]
-        dummy_valve = valve<>"_closed"
+        dummy_valve = valve<>"_x"
         new_valves = [valve, dummy_valve | valves_acc]
         updated_connection = MapSet.put(conns, dummy_valve)
         new_connections = [updated_connection, conns |conns_acc]
         {new_rates, new_valves, new_connections}
     end)
 
-    IO.inspect(Enum.zip(updated_rates, updated_valves) |> Enum.filter(fn {r, _} -> r == 0 end))
-
     %{
+      minutes: minutes,
+      team: 1..team_size |> Enum.map(fn i -> "t_#{i}" end) |> List.to_tuple(),
       valves: List.to_tuple(updated_valves),
       connections: {["valves"], updated_connections},
       rates: {["valves"], updated_rates}
     }
   end
 
+end
+
+defmodule Day16.MinizincHandler do
+  @moduledoc false
+
+  require Logger
+
+  alias MinizincHandler.Default, as: DefaultHandler
+  use MinizincHandler
+
+  @doc false
+  def handle_solution(solution = %{index: _count, data: _data}) do
+    Logger.info("Objective: #{MinizincResults.get_solution_objective(solution)}")
+
+    DefaultHandler.handle_solution(solution)
+  end
+
+  @doc false
+  def handle_summary(summary) do
+    last_solution = MinizincResults.get_last_solution(summary)
+
+    Logger.debug(
+      "MZN final status (#{summary.solver}): #{summary.status}, objective: #{MinizincResults.get_solution_objective(last_solution)}"
+    )
+    summary &&
+    (
+      Logger.debug("Time elapsed: #{summary.time_elapsed}")
+    )
+    DefaultHandler.handle_summary(summary)
+  end
+
+  @doc false
+  def handle_minizinc_error(error) do
+    Logger.debug("Minizinc error: #{inspect(error)}")
+    DefaultHandler.handle_minizinc_error(error)
+  end
 end

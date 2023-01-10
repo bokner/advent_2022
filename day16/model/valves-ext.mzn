@@ -21,6 +21,7 @@ array[MINUTES0] of var set of valves: open_valves;
 
 array[MINUTES0] of var valves: position;
 
+enum team;
 %% At the start:
 %% Initial position is at AA
 constraint position[0] = valves[1];
