@@ -60,14 +60,22 @@ constraint forall(m in MINUTES)(
     )
 );
 
-array[MINUTES] of var 0..sum(rates): flow;
-constraint forall(m in MINUTES)(
-  flow[m] = sum(v in open_valves[m-1])(rates[v])
+include "disjoint.mzn";
+constraint forall(m in MINUTES, t in team)(
+  disjoint(connections[position[m, t]], open_valves[m])
 );
 
-var 0..sum(rates)*minutes: total_flow;
+% array[MINUTES] of var 0..sum(rates): flow;
+% constraint forall(m in MINUTES)(
+%   flow[m] = sum(v in open_valves[m-1])(rates[v])
+% );
 
-constraint total_flow =   sum(flow); 
+
+int: upper_bound;
+var 0..upper_bound: total_flow;
+
+
+%constraint total_flow =   sum(flow); 
 constraint total_flow =   sum(m in MINUTES)(sum(t in team)(rates[position[m, t]]) * (minutes - m));
 
 solve maximize total_flow;

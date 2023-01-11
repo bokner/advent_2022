@@ -91,6 +91,7 @@ defmodule Day16.Solution do
     end)
 
     %{
+      upper_bound: upper_bound(minutes, rates),
       minutes: minutes,
       team: 1..team_size |> Enum.map(fn i -> "t_#{i}" end) |> List.to_tuple(),
       valves: List.to_tuple(updated_valves),
@@ -99,6 +100,14 @@ defmodule Day16.Solution do
     }
   end
 
+  defp upper_bound(minutes, rates) do
+    rates
+    |> Enum.sort(:desc)
+    |> Enum.with_index(1)
+    |> Enum.take(minutes)
+    |> Enum.map(fn {r, idx} -> r * (30 - idx) end)
+    |> Enum.sum
+  end
 end
 
 defmodule Day16.MinizincHandler do
