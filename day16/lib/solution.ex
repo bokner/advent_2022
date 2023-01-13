@@ -105,7 +105,7 @@ defmodule Day16.Solution do
     |> Enum.sort(:desc)
     |> Enum.with_index(1)
     |> Enum.take(minutes)
-    |> Enum.map(fn {r, idx} -> r * (30 - idx) end)
+    |> Enum.map(fn {r, idx} -> r * (minutes - idx) end)
     |> Enum.sum
   end
 end
