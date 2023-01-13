@@ -1,5 +1,7 @@
 % Valves (Advent of Code, day 16)
-%
+
+% part 1: ~7 secs (chuffed)
+% part 2: ~8 mins (chuffed)
 %%%%%
 % Input %
 %%%%%
@@ -10,12 +12,13 @@ set of int: MINUTES0 =  0..minutes;
 
 enum valves;
 
-enum team; % = {human};
-  %{human, elephant};
+enum team; % = {human, elephant};
 
 array[valves] of int: rates;
 
 array[valves] of set of valves: connections;
+
+int: upper_bound;
 
 %%%%%%%%%%%%
 % Decision variables %
@@ -43,39 +46,49 @@ constraint forall(m in MINUTES) (
 
 %% Next move: don't open valves more then once
 constraint forall(m in MINUTES, t in team)(
-    position[m, t] in connections[position[m-1, t]] diff open_valves[m-1]
+    position[m, t] in connections[position[m-1, t]] 
+    diff open_valves[m-1]
 );
-
 
 %% Only one team member opens the valve
 
-% include "alldifferent.mzn";
-% constraint forall(m in MINUTES)(
-%   alldifferent([position[m, t]  | t in team where position[m, t]  in open_valves[m]])
-% );  
+include "alldifferent.mzn";
+constraint forall(m in MINUTES0)(
+  alldifferent([position[m, t]  | t in team where position[m, t]  in open_valves[m]]) 
+); 
 
-constraint forall(m in MINUTES)(
-  forall(t1, t2 in team where t1 != t2)(
-    (position[m, t1] = position[m, t2]) -> (not (position[m, t1] in open_valves[m]))
-    )
+constraint forall(t in team)(
+  alldifferent([position[m, t] | m in MINUTES where position[m, t]  in open_valves[m]])
 );
 
-include "disjoint.mzn";
-constraint forall(m in MINUTES, t in team)(
-  disjoint(connections[position[m, t]], open_valves[m])
-);
-
-% array[MINUTES] of var 0..sum(rates): flow;
-% constraint forall(m in MINUTES)(
-%   flow[m] = sum(v in open_valves[m-1])(rates[v])
-% );
 
 
-int: upper_bound;
 var 0..upper_bound: total_flow;
 
+array[MINUTES0] of var 0..sum(rates): flow;
+constraint flow[0] = 0;
+constraint forall(m in MINUTES)(
+  flow[m] = flow[m-1] + sum(t in team)(rates[position[m-1, t]])
+  %sum(v in open_valves[m-1])(rates[v])
+);
 
-%constraint total_flow =   sum(flow); 
-constraint total_flow =   sum(m in MINUTES)(sum(t in team)(rates[position[m, t]]) * (minutes - m));
+
+constraint total_flow =   sum(flow); 
+%  sum(m in MINUTES, t in team)(rates[position[m, t]] * (minutes - m));
 
 solve maximize total_flow;
+
+%% Performance .
+%% Symmetry breaks:
+include "globals.mzn";
+constraint lex_chain(position);
+
+% %% Don't return to the same place without opening the valve on your way!
+% constraint forall(m, n in MINUTES0 where m < n,  t in team)(
+%   (position[m, t] = position[n, t]) -> (card(open_valves[m]) < card(open_valves[n])) 
+% );
+
+%% Opening the valve precedes visiting it
+constraint forall(m in MINUTES, t in team)(
+  (position[m, t] in open_valves[m]) -> (position[m-1, t] = enum_prev(position[m, t]))
+);
