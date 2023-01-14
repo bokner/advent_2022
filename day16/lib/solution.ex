@@ -51,7 +51,7 @@ defmodule Day16.Solution do
   defp solve_mzn({valves, connections, rates} = _data, part) do
     {model, minutes, team_size, solver} =
       case part do
-        :part1 -> {"model/valves-ext-team.mzn", 30, 1, "chuffed"}
+        :part1 -> {"model/valves-ext-team.mzn", 30, 1, "gecode"}
         :part2 -> {"model/valves-ext-team.mzn", 26, 2, "chuffed"}
       end
 
