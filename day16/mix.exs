@@ -21,7 +21,8 @@ defmodule Day19.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:solverl, "~> 1.0.16"}
+      {:solverl, "~> 1.0.16"},
+      {:libgraph, "~> 0.16.0"}
     ]
   end
 end

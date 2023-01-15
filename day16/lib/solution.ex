@@ -45,24 +45,17 @@ defmodule Day16.Solution do
 
   def solve(input, part \\ :part1) do
     read(input)
-    |> solve_mzn(part)
+    |> build_dzn(part)
+    |> solve_mzn()
   end
 
-  defp solve_mzn({valves, connections, rates} = _data, part) do
-    {model, minutes, team_size, solver} =
-      case part do
-        :part1 -> {"model/valves-ext-team.mzn", 30, 1, "gecode"}
-        :part2 -> {"model/valves-ext-team.mzn", 26, 2, "chuffed"}
-      end
-
-    dzn = build_dzn(valves, connections, rates, minutes, team_size)
-
+  defp solve_mzn(model_data) do
     {:ok, solution} =
       MinizincSolver.solve_sync(
-        model,
-        dzn,
-        solver: solver,
-        time_limit: 60 * 60 * 1000,
+        model_data.model,
+        model_data.dzn,
+        solver: model_data.solver,
+        time_limit: 15 * 60 * 1000,
         solution_handler: Day16.MinizincHandler
       )
 
@@ -73,7 +66,13 @@ defmodule Day16.Solution do
     end)
   end
 
-  defp build_dzn(valves, connections, rates, minutes, team_size) do
+  def build_dzn({valves, connections, rates} = _data, part) do
+    {model, minutes, team_size, solver} =
+      case part do
+        :part1 -> {"model/valves-ext-team.mzn", 30, 1, "gecode"}
+        :part2 -> {"model/valves-ext-team.mzn", 26, 2, "chuffed"}
+      end
+
     {updated_rates, updated_valves, updated_connections} =
       List.foldr(Enum.zip([rates, valves, connections]), {[], [], []}, fn
         {0, valve, conns}, {rates_acc, valves_acc, conns_acc} ->
@@ -89,12 +88,16 @@ defmodule Day16.Solution do
       end)
 
     %{
-      upper_bound: upper_bound(minutes, rates),
-      minutes: minutes,
-      team: 1..team_size |> Enum.map(fn i -> "t_#{i}" end) |> List.to_tuple(),
-      valves: List.to_tuple(updated_valves),
-      connections: {["valves"], updated_connections},
-      rates: {["valves"], updated_rates}
+      model: model,
+      solver: solver,
+      dzn: %{
+        upper_bound: upper_bound(minutes, rates),
+        minutes: minutes,
+        team: 1..team_size |> Enum.map(fn i -> "t_#{i}" end) |> List.to_tuple(),
+        valves: List.to_tuple(updated_valves),
+        connections: {["valves"], updated_connections},
+        rates: {["valves"], updated_rates}
+      }
     }
   end
 
