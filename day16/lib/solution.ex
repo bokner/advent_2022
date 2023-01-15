@@ -55,11 +55,7 @@ defmodule Day16.Solution do
         :part2 -> {"model/valves-ext-team.mzn", 26, 2, "chuffed"}
       end
 
-
     dzn = build_dzn(valves, connections, rates, minutes, team_size)
-
-
-
 
     {:ok, solution} =
       MinizincSolver.solve_sync(
@@ -78,17 +74,19 @@ defmodule Day16.Solution do
   end
 
   defp build_dzn(valves, connections, rates, minutes, team_size) do
-    {updated_rates, updated_valves, updated_connections} = List.foldr(Enum.zip([rates, valves, connections]), {[], [], []},
+    {updated_rates, updated_valves, updated_connections} =
+      List.foldr(Enum.zip([rates, valves, connections]), {[], [], []}, fn
+        {0, valve, conns}, {rates_acc, valves_acc, conns_acc} ->
+          {[0 | rates_acc], [valve | valves_acc], [conns | conns_acc]}
 
-    fn {0, valve, conns}, {rates_acc, valves_acc, conns_acc} -> {[0 | rates_acc], [valve | valves_acc], [conns | conns_acc]}
-      {rate, valve, conns}, {rates_acc, valves_acc, conns_acc} ->
-        new_rates = [0, rate | rates_acc]
-        dummy_valve = valve<>"_x"
-        new_valves = [valve, dummy_valve | valves_acc]
-        updated_connection = MapSet.put(conns, dummy_valve)
-        new_connections = [updated_connection, conns |conns_acc]
-        {new_rates, new_valves, new_connections}
-    end)
+        {rate, valve, conns}, {rates_acc, valves_acc, conns_acc} ->
+          new_rates = [0, rate | rates_acc]
+          dummy_valve = valve <> "_x"
+          new_valves = [valve, dummy_valve | valves_acc]
+          updated_connection = MapSet.put(conns, dummy_valve)
+          new_connections = [updated_connection, conns | conns_acc]
+          {new_rates, new_valves, new_connections}
+      end)
 
     %{
       upper_bound: upper_bound(minutes, rates),
@@ -106,7 +104,7 @@ defmodule Day16.Solution do
     |> Enum.with_index(1)
     |> Enum.take(minutes)
     |> Enum.map(fn {r, idx} -> r * (minutes - idx) end)
-    |> Enum.sum
+    |> Enum.sum()
   end
 end
 
@@ -132,10 +130,10 @@ defmodule Day16.MinizincHandler do
     Logger.debug(
       "MZN final status (#{summary.solver}): #{summary.status}, objective: #{MinizincResults.get_solution_objective(last_solution)}"
     )
+
     summary &&
-    (
       Logger.debug("Time elapsed: #{summary.time_elapsed}")
-    )
+
     DefaultHandler.handle_summary(summary)
   end
 
