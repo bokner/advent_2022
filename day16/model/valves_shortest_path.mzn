@@ -27,8 +27,6 @@ array[VALVE_IDX] of var VALVE_IDX0: route;
 % Intervals between opening times of adjacent valves
 array[VALVE_IDX] of var MINUTES0: intervals;
 
-
-
 var MINUTES: path_length;
 %%%%%%%%%%%%%%%%%%%%
 % Constraints %%%%%%
@@ -52,6 +50,7 @@ constraint subcircuit(succ);
 
 %% Route
 constraint succ[1] > 1;
+
 %% Start with AA
 constraint route[1] = 1; %succ[arg_min(succ)];
 
@@ -68,15 +67,11 @@ constraint forall(v in VALVE_IDX)(
 % Valve opening times
 array[VALVE_IDX0] of var MINUTES0: times;
 
-constraint times[0] = 0;
-constraint forall(v in VALVE_IDX)(
-  times[v] = if v < points then
-    times[v-1] + intervals[v]
-  else 0 endif  
+constraint times[1] = intervals[1];
+constraint forall(v in 2..card(valves))(
+  times[v] = (v < points) * (times[v-1] + intervals[v])  
 );
 
-%constraint path_length = sum(intervals);
- % Alternative path length with route
  constraint path_length = sum(intervals);
  var VALVE_IDX0: points;
  constraint points = sum(v in VALVE_IDX)(bool2int(succ[v] != v));
