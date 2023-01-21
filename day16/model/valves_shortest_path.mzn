@@ -25,25 +25,13 @@ array[VALVE_IDX] of var VALVE_IDX: succ;
 array[VALVE_IDX] of var VALVE_IDX0: route;
 
 % Intervals between opening times of adjacent valves
-array[VALVE_IDX] of var MINUTES0: intervals;
+% array[1..card(valves)-1] of var MINUTES0: intervals;
 
 var MINUTES: path_length;
 %%%%%%%%%%%%%%%%%%%%
 % Constraints %%%%%%
 %%%%%%%%%%%%%%%%%%%%
 include "globals.mzn";
-
-%% Start at AA
-%constraint succ[1] = 7;
-%constraint route[1] = succ[1];
-%constraint hop[1] = 0;
-
-% Experiment with excluding valve from subcircuit 
-%constraint succ[3] = 3;
-
-%constraint succ = [5, 6, 3, 1, 2, 7, 4];
-
-%constraint succ = [5, 6, 3, 1, 2, 4, 7];
 
 %%%%%%%%%%%%%%
 constraint subcircuit(succ);
@@ -53,33 +41,26 @@ constraint succ[1] > 1;
 
 %% Start with AA
 constraint route[1] = 1; %succ[arg_min(succ)];
-
 constraint forall(v in 2..card(valves))(
   route[v] = succ[route[v-1]]
 );
 
-constraint forall(v in VALVE_IDX)(
-  intervals[v] = if v < points 
-  then distance[route[v],route[v+1]]
-  else 0 endif
-);
-
 % Valve opening times
-array[VALVE_IDX0] of var MINUTES0: times;
-
-constraint times[1] = intervals[1];
-constraint forall(v in 2..card(valves))(
-  times[v] = (v < points) * (times[v-1] + intervals[v])  
+array[1..card(valves)-1] of var MINUTES0: times;
+%constraint times[1] = intervals[1];
+constraint times[1] = distance[1, succ[1]];
+constraint forall(v in 2..card(valves) - 1)(
+  times[v] = (v < points) * (times[v-1] +distance[route[v],route[v+1]])  
 );
 
- constraint path_length = sum(intervals);
- var VALVE_IDX0: points;
- constraint points = sum(v in VALVE_IDX)(bool2int(succ[v] != v));
+ constraint path_length = max(times); %sum(intervals);
+ var VALVE_IDX: points;
+ constraint points = sum(v in VALVE_IDX)(succ[v] != v);
  
  var 0..sum(rates)*minutes: total_flow;
  
- array[VALVE_IDX] of var 0..sum(rates)*minutes: flow;
- constraint forall(v in VALVE_IDX)(flow[v] = (times[v-1] > 0)*(minutes - times[v-1]) * rates[route[v]]);
+ array[1..card(valves)-1] of var 0..max(rates)*minutes: flow;
+ constraint forall(v in 1..card(valves)-1)(flow[v] = (times[v] > 0)*(minutes - times[v]) * rates[route[v+1]]);
 
 constraint total_flow = sum(flow);
  
