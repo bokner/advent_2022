@@ -25,7 +25,7 @@ array[VALVE_IDX] of var VALVE_IDX: succ;
 array[VALVE_IDX] of var VALVE_IDX0: route;
 
 % Intervals between opening times of adjacent valves
-array[VALVE_IDX] of var opt MINUTES0: intervals;
+array[VALVE_IDX] of var MINUTES0: intervals;
 
 
 
@@ -42,42 +42,51 @@ include "globals.mzn";
 
 % Experiment with excluding valve from subcircuit 
 %constraint succ[3] = 3;
+
 %constraint succ = [5, 6, 3, 1, 2, 7, 4];
-constraint succ = [5, 6, 3, 1, 2, 4, 7];
+
+%constraint succ = [5, 6, 3, 1, 2, 4, 7];
+
 %%%%%%%%%%%%%%
 constraint subcircuit(succ);
 
 %% Route
-
+constraint succ[1] > 1;
 %% Start with AA
-constraint route[1] = succ[arg_min(succ)];
+constraint route[1] = 1; %succ[arg_min(succ)];
 
 constraint forall(v in 2..card(valves))(
   route[v] = succ[route[v-1]]
 );
 
+constraint forall(v in VALVE_IDX)(
+  intervals[v] = if v < points 
+  then distance[route[v],route[v+1]]
+  else 0 endif
+);
 
+% Valve opening times
+array[VALVE_IDX0] of var MINUTES0: times;
 
-
-
-
-
-
- 
-% constraint forall(v in VALVE_IDX)(
-%   intervals[v] = distance[v, succ[v]]
-% );
-
-
-constraint forall(v in 2..points-1)(
-  intervals[v-1] = distance[route[v-1],route[v]]
+constraint times[0] = 0;
+constraint forall(v in VALVE_IDX)(
+  times[v] = if v < points then
+    times[v-1] + intervals[v]
+  else 0 endif  
 );
 
 %constraint path_length = sum(intervals);
  % Alternative path length with route
- constraint path_length = sum(v in 1..points)(route[v]);
+ constraint path_length = sum(intervals);
  var VALVE_IDX0: points;
  constraint points = sum(v in VALVE_IDX)(bool2int(succ[v] != v));
  
-solve maximize path_length;
+ var 0..sum(rates)*minutes: total_flow;
+ 
+ array[VALVE_IDX] of var 0..sum(rates)*minutes: flow;
+ constraint forall(v in VALVE_IDX)(flow[v] = (times[v-1] > 0)*(minutes - times[v-1]) * rates[route[v]]);
+
+constraint total_flow = sum(flow);
+ 
+solve maximize total_flow;
 
