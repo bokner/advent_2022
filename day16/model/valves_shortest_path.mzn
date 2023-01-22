@@ -6,6 +6,8 @@
 %%%%%
 int: minutes; 
 
+int: upper_bound;
+
 enum valves;
 
 set of int: VALVE_IDX =  1..card(valves);
@@ -47,25 +49,31 @@ constraint forall(v in 2..card(valves))(
 );
 
 % Valve opening times
-array[1..card(valves)-1] of var MINUTES0: times;
+array[1..card(valves)-1] of var opt MINUTES: times;
 constraint times[1] = distance[1, succ[1]];
 constraint forall(v in 2..card(valves) - 1)(
-  times[v] = if (v < points) then 
+  times[v] = %if (v >= points) then <>
+    if route[v] = 1 then <>
+    elseif absent(times[v-1]) then <>
+    else
     (times[v-1] +distance[route[v-1],route[v]]) 
-    else 0
     endif
 );
 
- constraint path_length = max(times);
+ constraint path_length = times[points-1];
  var VALVE_IDX: points;
 
- constraint points = arg_min(route);
- constraint points = sum(v in VALVE_IDX)(succ[v] != v);
+
+%constraint points = arg_min(route);
+constraint route[points] = 1;
+constraint points = sum(v in VALVE_IDX)(succ[v] != v);
  
- var 0..sum(rates)*minutes: total_flow;
+ var min(rates)..upper_bound: total_flow;
  
 constraint total_flow = sum(v in 1..card(valves)-1)(
-      (v < points) * (minutes - times[v]) * rates[route[v]]
+      if absent(times[v]) then 0 else
+      (minutes - times[v]) * rates[route[v]]
+      endif
   );
  
 solve maximize total_flow;
