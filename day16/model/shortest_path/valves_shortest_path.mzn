@@ -26,10 +26,8 @@ set of int: MINUTES0 =  0..minutes;
 array[VALVE_IDX] of var VALVE_IDX: succ;
 array[VALVE_IDX] of var VALVE_IDX0: route;
 
-% Intervals between opening times of adjacent valves
-% array[1..card(valves)-1] of var MINUTES0: intervals;
 
-var MINUTES: path_length;
+var MINUTES: path_duration;
 %%%%%%%%%%%%%%%%%%%%
 % Constraints %%%%%%
 %%%%%%%%%%%%%%%%%%%%
@@ -48,35 +46,38 @@ constraint forall(v in 2..card(valves))(
   route[v] = succ[route[v-1]]
 );
 
-% Valve opening times
-array[1..card(valves)-1] of var opt MINUTES: times;
-constraint times[1] = distance[1, succ[1]];
+% Valve opening arrival_times
+array[1..card(valves)-1] of var opt MINUTES: arrival_times;
+constraint arrival_times[1] = distance[1, succ[1]];
 constraint forall(v in 2..card(valves) - 1)(
-  times[v] = %if (v >= points) then <>
+  arrival_times[v] = %if (v >= visits) then <>
     if route[v] = 1 then <>
-    elseif absent(times[v-1]) then <>
+    elseif absent(arrival_times[v-1]) then <>
     else
-    (times[v-1] +distance[route[v-1],route[v]]) 
+    (arrival_times[v-1] + distance[route[v-1],route[v]]) 
     endif
 );
 
- constraint path_length = times[points-1];
- var VALVE_IDX: points;
+constraint path_duration = arrival_times[visits-1];
+ 
+ % Number of visits in a subcircuit that represents the chosen path.
+ var VALVE_IDX: visits;
 
-
-%constraint points = arg_min(route);
-constraint route[points] = 1;
-constraint points = sum(v in VALVE_IDX)(succ[v] != v);
+%constraint visits = arg_min(route);
+constraint route[visits] = 1;
+constraint visits = sum(v in VALVE_IDX)(succ[v] != v);
  
  var min(rates)..upper_bound: total_flow;
  
 constraint total_flow = sum(v in 1..card(valves)-1)(
-      if absent(times[v]) then 0 else
-      (minutes - times[v]) * rates[route[v]]
+      if absent(arrival_times[v]) then 0 else
+      (minutes - arrival_times[v]) * rates[route[v]]
       endif
   );
  
-solve maximize total_flow;
+solve 
+  %:: int_search([visits], input_order, indomain_min)
+maximize total_flow;
 
 
 %% Things to try: subpath from Peter Stuckey.
