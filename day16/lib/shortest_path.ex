@@ -1,22 +1,48 @@
 defmodule Day16.ShortestPath do
   import Day16.Solution
 
-  def build_graph(input) when is_binary(input) do
+  require Logger
+
+  def solve(input, part) do
     read(input)
-    |> build_dzn(:part1)
+    |> build_dzn(part)
+    |> build_graph()
+    |> solve_mzn(part)
+  end
+
+  defp solve_mzn(model_data, part) do
+    model_params = get_model_params(part)
+
+    {:ok, solution} =
+      MinizincSolver.solve_sync(
+        model_params.model,
+        model_data,
+        solver: model_params.solver,
+        time_limit: 15 * 60 * 1000,
+        solution_handler: Day16.MinizincHandler
+      )
+
+    MinizincResults.get_last_solution(solution)
+    |> MinizincResults.get_solution_objective()
+    |> tap(fn result ->
+      Logger.info("Solution: #{result}")
+    end)
+  end
+
+  def build_graph(data) when is_map(data) do
+    data
     |> Map.get(:dzn)
     |> then(fn dzn ->
-      build_graph(dzn)
-      |> build_distance_matrix()
+      build_shortest_paths(dzn)
       |> then(fn d ->
         Map.put(dzn, :distance, {["valves", "valves"], d})
         |> truncate_rates()
       end)
     end)
-    |> Map.take([:distance, :rates, :minutes, :valves])
+    |> Map.take([:distance, :rates, :minutes, :valves, :upper_bound])
   end
 
-  def build_graph(dzn) do
+  def build_shortest_paths(dzn) do
     vertices = Tuple.to_list(dzn.valves)
     {_label, rates} = dzn.rates
     {_label, connections} = dzn.connections
@@ -47,12 +73,14 @@ defmodule Day16.ShortestPath do
 
   defp truncate_rates(dzn) do
     {rates_label, rates} = Map.get(dzn, :rates)
+
     {truncated_rates, truncated_valves} =
-    Enum.zip(rates, Tuple.to_list(Map.get(dzn, :valves)))
-    |> Enum.filter(fn {_, "AA"} -> true
-      {rate, _valve} -> rate > 0
-    end)
-    |> Enum.unzip()
+      Enum.zip(rates, Tuple.to_list(Map.get(dzn, :valves)))
+      |> Enum.filter(fn
+        {_, "AA"} -> true
+        {rate, _valve} -> rate > 0
+      end)
+      |> Enum.unzip()
 
     Map.put(dzn, :rates, {rates_label, truncated_rates})
     |> Map.put(:valves, List.to_tuple(truncated_valves))
@@ -63,20 +91,20 @@ defmodule Day16.ShortestPath do
 
     for v1 <- Enum.sort(vertices) do
       for v2 <- Enum.sort(vertices) do
-      path_length =
-        if v1 == v2 do
-          0
-        else
-          length(Graph.get_shortest_path(graph, v1, v2)) - 1
-        end
+        path_length =
+          cond do
+            v1 == v2 -> 0
+            v2 == "AA" -> 0
+            true -> length(Graph.get_shortest_path(graph, v1, v2)) - 1
+          end
 
-      #{v1, v2, path_length}
-      path_length
+        # {v1, v2, path_length}
+        path_length
+      end
     end
   end
-  end
 
-  defp build_distance_matrix(distances) do
-    distances
+  defp get_model_params(_part) do
+    %{solver: "chuffed", model: "model/shortest_path/valves_shortest_path.mzn"}
   end
 end
