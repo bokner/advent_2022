@@ -23,6 +23,11 @@ set of int: MINUTES = 1..minutes;
 %%%%%%%%%%%%%%%%%%%%
 array[VALVE_IDX] of var VALVE_IDX: route;
 
+array[1..card(valves)-1] of var MINUTES0: duration;
+array[1..card(valves)-1] of var MINUTES: opening_time;
+
+array[1..card(valves)-1] of var min(rates)..max(rates)*minutes: pressure;
+
 var MINUTES: path_duration;
 % Number of visits in a subcircuit that represents the chosen path.
 var VALVE_IDX: visits;
@@ -49,11 +54,6 @@ constraint forall(v in 1..card(valves)-1)(
   /\ opening_time[v] = if v = 1 then duration[1] else opening_time[v-1] + duration[v] endif
   /\ pressure[v] = (minutes - opening_time[v]) * rates[route[v+1]]
 );  
-
-array[1..card(valves)-1] of var MINUTES0: duration;
-array[1..card(valves)-1] of var MINUTES: opening_time;
-
-array[1..card(valves)-1] of var min(rates)..max(rates)*minutes: pressure;
 
 constraint path_duration = opening_time[visits-1]; 
 constraint count(route, 1, card(valves) - visits + 1);

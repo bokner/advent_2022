@@ -1,4 +1,4 @@
-defmodule Day16.ShortestPath do
+defmodule Day16.Solution.ShortestPath do
   import Day16.Solution
 
   require Logger
