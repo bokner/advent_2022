@@ -1,5 +1,5 @@
-defmodule Day16.Solution.ShortestPath do
-  import Day16.Solution
+defmodule Day16.Solution do
+  import Day16.First.Solution
 
   require Logger
 
@@ -7,6 +7,7 @@ defmodule Day16.Solution.ShortestPath do
     read(input)
     |> build_dzn(part)
     |> build_graph()
+    |> finish_dzn(part)
     |> solve_mzn(part)
   end
 
@@ -39,7 +40,12 @@ defmodule Day16.Solution.ShortestPath do
         |> truncate_rates()
       end)
     end)
+  end
+
+  def finish_dzn(data, part) do
+    data
     |> Map.take([:distance, :rates, :minutes, :valves, :upper_bound])
+    |> Map.put(:team, part == :part1 && 1 || 2)
   end
 
   def build_shortest_paths(dzn) do

@@ -1,4 +1,4 @@
-defmodule Day16.Solution do
+defmodule Day16.First.Solution do
   require Logger
 
   def read(input) do
