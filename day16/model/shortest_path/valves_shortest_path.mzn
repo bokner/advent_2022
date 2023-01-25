@@ -48,7 +48,7 @@ constraint sum(visits) < card(valves);
 
 % symmetry breaks
 constraint increasing(total_flow);
-%constraint increasing(visits);
+constraint increasing(visits);
 
 solve 
  % :: int_search(total_flow, smallest, indomain_min)
@@ -78,7 +78,7 @@ predicate valve_tour(
   /\ pressure[v] = (minutes - opening_time[v]) * rates[route[v+1]]
 ) 
 
-/\ path_duration = opening_time[visits-2]
+/\ path_duration = sum(duration) %opening_time[visits-2]
 /\ count(route, 1, card(valves) - visits)
 /\ visits = sum(v in 2..card(valves))(route[v] != 1)
 /\ total_flow = sum(pressure);
