@@ -25,32 +25,40 @@ set of int: TEAM = 1..team;
 %%%%%%%%%%%%%%%%%%%%
 % Decision variables
 %%%%%%%%%%%%%%%%%%%%
+
+% Routes
 array[VALVE_IDX, TEAM] of var VALVE_IDX: route;
+
+% Total flows per route
 array[TEAM] of var min(rates)..upper_bound: total_flow;
+
+% Number of visits in the route
+array[TEAM] of var VALVE_IDX_SHORT: visits;
 %%%%%%%%%%%%%%%%%%%%
 % Constraints %%%%%%
 %%%%%%%%%%%%%%%%%%%%
 include "globals.mzn"; 
 
 constraint forall(t in TEAM)(
-    valve_tour(col(route, t), total_flow[t])
+    valve_tour(col(route, t), total_flow[t], visits[t])
 );
 
 constraint alldifferent_except(array1d(route), {1});
+constraint sum(visits) < card(valves);
 
 % symmetry breaks
 constraint increasing(total_flow);
+%constraint increasing(visits);
 
 solve 
-  %:: int_search([visits], input_order, indomain_min)
+ % :: int_search(total_flow, smallest, indomain_min)
 maximize sum(total_flow);
-
 
 predicate valve_tour(
   array[VALVE_IDX] of var VALVE_IDX: route,
-  var min(rates)..upper_bound: total_flow) = let {
-   % Number of visits in the tour.
-    var VALVE_IDX: visits = sum(v in 2..card(valves))(route[v] != 1) + 1;
+  var min(rates)..upper_bound: total_flow,
+  var VALVE_IDX_SHORT: visits
+  ) = let {
     array[VALVE_IDX_SHORT] of var MINUTES0: duration;
     array[VALVE_IDX_SHORT] of var MINUTES: opening_time;
     array[VALVE_IDX_SHORT] of var min(rates)..max(rates)*minutes: pressure;
@@ -70,6 +78,7 @@ predicate valve_tour(
   /\ pressure[v] = (minutes - opening_time[v]) * rates[route[v+1]]
 ) 
 
-/\ path_duration = opening_time[visits-1]
-/\ count(route, 1, card(valves) - visits + 1)
+/\ path_duration = opening_time[visits-2]
+/\ count(route, 1, card(valves) - visits)
+/\ visits = sum(v in 2..card(valves))(route[v] != 1)
 /\ total_flow = sum(pressure);
