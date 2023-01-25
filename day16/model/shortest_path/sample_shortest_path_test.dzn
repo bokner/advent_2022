@@ -7,5 +7,5 @@ succ = [5, 6, 3, 1, 2, 7, 4];
 valves = {AA, BB_x, CC_x, DD_x, EE_x, HH_x, JJ_x};
 upper_bound = 2227;
 rates = array1d(valves,[0, 13, 2, 20, 3, 22, 21]);
-minutes = 30;
+minutes = 26;
 distance = array2d(valves,valves,[0, 2, 3, 2, 3, 6, 3, 0, 0, 2, 3, 4, 7, 4, 0, 2, 0, 2, 3, 6, 5, 0, 3, 2, 0, 2, 5, 4, 0, 4, 3, 2, 0, 4, 5, 0, 7, 6, 5, 4, 0, 8, 0, 4, 5, 4, 5, 8, 0]);

@@ -1,5 +1,5 @@
 defmodule Day16.Solution do
-  import Day16.First.Solution
+  import Day16.V1.Solution
 
   require Logger
 

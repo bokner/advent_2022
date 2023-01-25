@@ -18,8 +18,10 @@ iex -S mix
 ```
 
 ```elixir
+## Runtime for part 1: less than 1 sec
 iex(1)> Day16.Solution.solve("data/day19.data", :part1)
 
+## Runtime for part 2: less than 7 sec
 iex(2)> Day19.Solution.solve("data/day19.data", :part2)
 
 ```
