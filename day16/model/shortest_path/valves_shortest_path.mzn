@@ -36,9 +36,7 @@ constraint forall(t in TEAM)(
     valve_tour(col(route, t), total_flow[t])
 );
 
-constraint forall(t1, t2 in TEAM where t1 < t2)(
-  alldifferent_except(col(route, t1) ++ col(route, t2), {1})
-);
+constraint alldifferent_except(array1d(route), {1});
 
 % symmetry breaks
 constraint increasing(total_flow);
