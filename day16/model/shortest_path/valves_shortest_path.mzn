@@ -48,10 +48,11 @@ constraint sum(visits) < card(valves);
 
 % symmetry breaks
 constraint increasing(total_flow);
+%constraint lex_chain(route);
 constraint increasing(visits);
 
 solve 
- % :: int_search(total_flow, smallest, indomain_min)
+ % :: int_search(total_flow, first_fail, indomain_min)
 maximize sum(total_flow);
 
 predicate valve_tour(
@@ -59,7 +60,6 @@ predicate valve_tour(
   var min(rates)..upper_bound: total_flow,
   var VALVE_IDX_SHORT: visits
   ) = let {
-    array[VALVE_IDX_SHORT] of var MINUTES0: duration;
     array[VALVE_IDX_SHORT] of var MINUTES: opening_time;
     array[VALVE_IDX_SHORT] of var min(rates)..max(rates)*minutes: pressure;
     var MINUTES: path_duration,
@@ -73,12 +73,14 @@ predicate valve_tour(
 /\
 % Duration, opening times and pressures in order of visits
   forall(v in VALVE_IDX_SHORT)(
-  duration[v] = distance[route[v], route[v+1]]
-  /\ opening_time[v] = if v = 1 then duration[1] else opening_time[v-1] + duration[v] endif
+    let {var MINUTES0: duration = distance[route[v], route[v+1]]} in 
+  opening_time[v] = if v = 1 then duration else opening_time[v-1] + duration endif
   /\ pressure[v] = (minutes - opening_time[v]) * rates[route[v+1]]
+
 ) 
 
-/\ path_duration = sum(duration) %opening_time[visits-2]
-/\ count(route, 1, card(valves) - visits)
+/\ path_duration =opening_time[visits]
+%/\ count(route, 1, card(valves) - visits)
 /\ visits = sum(v in 2..card(valves))(route[v] != 1)
-/\ total_flow = sum(pressure);
+/\ total_flow = sum(pressure)
+/\ alldifferent_except_0([route[i] * ( i < visits) | i in 2..card(valves)]);
